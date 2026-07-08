@@ -1,0 +1,20 @@
+{
+  "name": "survivalpark",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "sharafzada",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@quenty/binder": "^14.36.1",
+    "@quenty/clienttranslator": "^14.37.1",
+    "@quenty/cmdrservice": "^13.45.2",
+    "@quenty/loader": "^10.11.0",
+    "@quenty/nevermore-cli": "^4.33.1",
+    "@quenty/servicebag": "^11.18.1"
+  }
+}
