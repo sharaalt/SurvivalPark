@@ -161,6 +161,20 @@ function RoundService:_mainLoop(): ()
 end
 
 --[[
+	Begin's the round and initalize's team's.
+
+	@return ()
+]]
+function RoundService:_beginRound(): () 
+	if self._activeRound then 
+		warn("[RoundService] - There's already an active round.")
+		return
+	end
+
+	s
+end
+
+--[[
 	Clean's up the round data and process's additional stuff.	
 
 	@return ()
@@ -179,7 +193,7 @@ function RoundService:_endRound()
 	if finishedRoundData._roundName ~= "Intermission" then
 		self:_beginIntermission()
 	else
-		local playerAmount = #Players:GetPlayers()
+		local playerAmount = Players:GetPlayers()
 
 		if #playerAmount >= RoundServiceConstants.MINIMUM_PLAYERS then
 			self:InitalizeRound(RoundServiceConstants.ROUND_NAME, RoundServiceConstants.ROUND_DURATION)
