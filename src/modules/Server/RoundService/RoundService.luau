@@ -33,6 +33,7 @@ function RoundService:Init(serviceBag)
 
 	-- Services
 	self._maid = Maid.new()
+	self._TeamSerivce = self._serviceBag:GetService(require("TeamService"))
 
 	-- Variables
 	self._activeRound = nil :: Types.RoundTable?
@@ -205,7 +206,7 @@ end
 ]]
 function RoundService:Destroy(): ()
 	self._maid:DoCleaning()
-	print("[RoundService] - Sucessfully destroyed & cleaned RoundService.")
+	print("[RoundService] - Sucessfully destroyed and cleaned RoundService.")
 end
 
 return RoundService
