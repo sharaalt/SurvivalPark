@@ -15,6 +15,7 @@
     "@quenty/cmdrservice": "^13.45.2",
     "@quenty/loader": "^10.11.0",
     "@quenty/nevermore-cli": "^4.33.1",
+    "@quenty/nevermore-test-runner": "^1.4.0",
     "@quenty/servicebag": "^11.18.1"
   }
 }

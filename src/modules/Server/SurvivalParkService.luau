@@ -1,4 +1,3 @@
---!strict
 --[=[
 	@class SurvivalParkService
 ]=]
@@ -10,13 +9,12 @@ local ServiceBag = require("ServiceBag")
 local SurvivalParkService = {}
 SurvivalParkService.ServiceName = "SurvivalParkService"
 
-export type SurvivalParkService =
-	typeof(setmetatable(
-		{} :: {
-			_serviceBag: ServiceBag.ServiceBag,
-		},
-		{} :: typeof({ __index = SurvivalParkService })
-	))
+export type SurvivalParkService = typeof(setmetatable(
+	{} :: {
+		_serviceBag: ServiceBag.ServiceBag,
+	},
+	{} :: typeof({ __index = SurvivalParkService })
+))
 
 function SurvivalParkService.Init(self: SurvivalParkService, serviceBag: ServiceBag.ServiceBag): ()
 	assert(not (self :: any)._serviceBag, "Already initialized")
@@ -27,6 +25,7 @@ function SurvivalParkService.Init(self: SurvivalParkService, serviceBag: Service
 
 	-- Internal
 	self._serviceBag:GetService(require("SurvivalParkTranslator"))
+	self._serviceBag:GetService(require("RoundService"))
 end
 
 return SurvivalParkService
