@@ -1,10 +1,10 @@
 --[[
     @author sharafzada
     @class RoundService.luau
-    @version 1.0.0
+    @version 1.0.1
 
     -- To-Do list
-    @todo A lot of stuff :p
+    @todo Integrate UI
 
     The round service is meant to handle the creation of rounds, round events, and post round cleanup. Furthermore, it also
     interacts with the UI via remote events and provides signals which are able to be observed.
@@ -33,7 +33,7 @@ function RoundService:Init(serviceBag)
 
 	-- Services
 	self._maid = Maid.new()
-	self._TeamSerivce = self._serviceBag:GetService(require("TeamService"))
+	self._TeamService = self._serviceBag:GetService(require("TeamService"))
 
 	-- Variables
 	self._activeRound = nil :: Types.RoundTable?
@@ -109,8 +109,8 @@ function RoundService:_mainLoop(): ()
 		local playerAmount = Players:GetPlayers()
 
 		-- If there's more than 2 player's we start if not keep waiting.
-		if #playerAmount >= RoundServiceConstants.MINIMUM_PLAYERS then
-			self:InitalizeRound(RoundServiceConstants.ROUND_NAME, RoundServiceConstants.ROUND_DURATION)
+		if #playerAmount >= RoundServiceConstants.MINIMUM_PLAYERS and self._activeRound == nil then
+			self:_beginRound()
 		else
 			warn("[RoundService] - Not enough players to start the round.")
 		end
@@ -138,14 +138,15 @@ function RoundService:_mainLoop(): ()
 		while true do
 			task.wait(1)
 
+			-- If the round's are not the same or self._activeRound is nil break the loop.
 			if self._activeRound ~= currentRounnd or self._activeRound == nil then
 				break
 			end
 
+			-- Increase elapsed time.
 			elapsedTime += 1
-			print(elapsedTime)
-			print(self._activeRound)
 
+			-- If the elapsedTime is <= the roundDuration end the round and break the loop.
 			if self._activeRound._roundDuration <= elapsedTime then
 				self.RoundEnded:Fire(roundName)
 				break
@@ -154,8 +155,6 @@ function RoundService:_mainLoop(): ()
 	end))
 
 	self._maid:GiveTask(self.RoundEnded:Connect(function(roundName: string)
-		print(self._activeRound)
-
 		self:_endRound()
 	end))
 end
@@ -165,13 +164,26 @@ end
 
 	@return ()
 ]]
-function RoundService:_beginRound(): () 
-	if self._activeRound then 
+function RoundService:_beginRound(): ()
+	if self._activeRound then
 		warn("[RoundService] - There's already an active round.")
 		return
 	end
 
-	s
+	-- Create both teams.
+	self._TeamService:CreateTeam(
+		RoundServiceConstants.Teams.TEAM_RED.TEAM_NAME,
+		RoundServiceConstants.Teams.TEAM_RED.TEAM_COLOUR
+	)
+
+	self._TeamService:CreateTeam(
+		RoundServiceConstants.Teams.TEAM_BLUE.TEAM_NAME,
+		RoundServiceConstants.Teams.TEAM_BLUE.TEAM_COLOUR
+	)
+
+	-- Initalize's the round and sort's player's into 2 teams.
+	self:_sortPlayers()
+	self:InitalizeRound(RoundServiceConstants.ROUND_NAME, RoundServiceConstants.ROUND_DURATION)
 end
 
 --[[
@@ -191,12 +203,16 @@ function RoundService:_endRound()
 	self._activeRound = nil
 
 	if finishedRoundData._roundName ~= "Intermission" then
+		-- Remove the team's we previously created.
+		self._TeamService:RemoveTeam(RoundServiceConstants.Teams.TEAM_RED.TEAM_NAME)
+		self._TeamService:RemoveTeam(RoundServiceConstants.Teams.TEAM_BLUE.TEAM_NAME)
+
 		self:_beginIntermission()
 	else
 		local playerAmount = Players:GetPlayers()
 
 		if #playerAmount >= RoundServiceConstants.MINIMUM_PLAYERS then
-			self:InitalizeRound(RoundServiceConstants.ROUND_NAME, RoundServiceConstants.ROUND_DURATION)
+			self:_beginRound()
 		else
 			warn("[RoundService] - Not enough players to start the round.")
 		end
@@ -211,6 +227,33 @@ end
 function RoundService:_beginIntermission()
 	self:InitalizeRound("Intermission", RoundServiceConstants.INTERMISSION_DURATION)
 	self.RoundBegan:Fire()
+end
+
+--[[
+	Sort's player's into 2 different teams.
+
+	@return ()
+]]
+function RoundService:_sortPlayers(): ()
+	local players = Players:GetPlayers()
+
+	-- Designate 10% of the server to be hunters.
+	local hunterAmount = math.max(1, math.round(#players * 0.10))
+
+	-- Scrambles the player's up.
+	for i = #players, 2, -1 do
+		local j = math.random(i)
+		players[i], players[j] = players[j], players[i]
+	end
+
+	for i, plr in ipairs(players) do
+		-- Used to fairly give players to each team.
+		if i <= hunterAmount then
+			self._TeamService:AddPlayer(plr, RoundServiceConstants.Teams.TEAM_RED.TEAM_NAME)
+		else
+			self._TeamService:AddPlayer(plr, RoundServiceConstants.Teams.TEAM_BLUE.TEAM_NAME)
+		end
+	end
 end
 
 --[[

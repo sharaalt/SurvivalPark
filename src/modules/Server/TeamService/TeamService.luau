@@ -4,7 +4,7 @@
     @version 1.0.0
 
     -- To-do list
-    @todo 
+    @todo Refactor the code later.
 
     The TeamService is meant to handle the creation, deletion, and overall lifecycle of teams.
 ]]
@@ -103,7 +103,7 @@ end
 ]]
 function TeamService:AddPlayer(player: Player, teamName: string): ()
 	-- Make sure the type's are correct.
-	if typeof(player) ~= "Player" then
+	if typeof(player) ~= "Instance" then
 		warn(string.format("[TeamService] - Typeof player %q is not a valid type.", typeof(player)))
 		return
 	end
@@ -130,7 +130,7 @@ function TeamService:AddPlayer(player: Player, teamName: string): ()
 
 	-- Add the player and set there team colour.
 	teamTable._teamPlayers[player.UserId] = player
-	player.TeamColor = teamTable._teamObject.TeamColor
+	player.Team = teamTable._teamObject
 
 	-- Fire the event and print a confirmation.
 	self.PlayerAdded:Fire(teamName, player)

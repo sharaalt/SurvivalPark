@@ -19,7 +19,7 @@ local TeamServiceProfile = {}
 ]]
 function TeamServiceProfile.CreateTeamTable(team: Team): Types.TeamTable?
 	-- Make sure we're actually getting a team and not anything else.
-	if typeof(team) ~= "Team" then
+	if typeof(team) ~= "Instance" then
 		warn(string.format("[TeamServiceProfile] - Typeof team %q is not a valid type.", typeof(team)))
 		return nil
 	end
@@ -28,6 +28,7 @@ function TeamServiceProfile.CreateTeamTable(team: Team): Types.TeamTable?
 	local foramttedTable: Types.TeamTable = {
 		_teamObject = team,
 		_teamCreated = os.time(),
+		_teamPlayers = {},
 	}
 
 	return foramttedTable
