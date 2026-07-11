@@ -16,27 +16,16 @@ function TimerComponent:init(props)
 	})
 end
 
-function TimerComponent:convertTime(time)
-	local minutes = math.floor((time % 3600) / 60)
-	local seconds = time % 60
-
-	local concatTime = string.format("%0.2d:%0.2d", minutes, seconds)
-
-	return concatTime
+function TimerComponent:didMount()
+	self._maid:GiveTask(RemoteEvents.OnTimerUpdateRequest.OnClientEvent:Connect(function(text)
+		self:setState({
+			timerText = text,
+		})
+	end))
 end
 
-function TimerComponent:didMount()
-	self._maid:GiveTask(RemoteEvents.OnTimerUpdateRequest.OnClientEvent:Connect(function(time)
-		if typeof(time) == "number" then
-			self:setState({
-				timerText = self:convertTIme(time),
-			})
-		else
-			self:setState({
-				timerText = time,
-			})
-		end
-	end))
+function TimerComponent:willUnmount()
+	self._maid:DoCleaning()
 end
 
 function TimerComponent:render()

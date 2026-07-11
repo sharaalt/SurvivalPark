@@ -1,7 +1,7 @@
 --[[
     @author sharafzada
     @class RoundService.luau
-    @version 1.0.1
+    @version 1.0.2
 
     -- To-Do list
     @todo Integrate UI
@@ -11,6 +11,7 @@
 ]]
 
 -- External Services
+local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
 local RoundServiceConstants = require(script.Parent.Parent.Parent.Shared.RoundServiceConstants)
 local Players = game:GetService("Players")
 local Types = require(script.Parent.Types)
@@ -59,7 +60,7 @@ end
 
     @return ()
 ]]
-function RoundService:InitalizeRound(roundName: string, roundDuration: number, ...: { [number]: Player }): ()
+function RoundService:InitializeRound(roundName: string, roundDuration: number, ...: { [number]: Player }): ()
 	if typeof(roundName) ~= "string" then
 		warn(string.format("[RoundService] - Type of roundName %q is not a valid type.", typeof(roundName)))
 		return
@@ -108,7 +109,7 @@ function RoundService:_mainLoop(): ()
 	self._maid:GiveTask(Players.PlayerAdded:Connect(function(plr: Player)
 		local playerAmount = Players:GetPlayers()
 
-		-- If there's more than 2 player's we start if not keep waiting.
+		-- If there's more than the minimum amount of player's we start if not keep waiting.
 		if #playerAmount >= RoundServiceConstants.MINIMUM_PLAYERS and self._activeRound == nil then
 			self:_beginRound()
 		else
@@ -145,6 +146,17 @@ function RoundService:_mainLoop(): ()
 
 			-- Increase elapsed time.
 			elapsedTime += 1
+
+			local timeLeft = self._activeRound._roundDuration - elapsedTime
+			print(roundName)
+			-- Update timer.
+			if roundName == RoundServiceConstants.RoundNames.INTERMISSION_ROUND_NAME then
+				RemoteEvents.OnTimerUpdateRequest:FireAllClients(
+					RoundServiceConstants.RoundNames.INTERMISSION_ROUND_NAME
+				)
+			else
+				RemoteEvents.OnTimerUpdateRequest:FireAllClients(self:_formatTime(timeLeft))
+			end
 
 			-- If the elapsedTime is <= the roundDuration end the round and break the loop.
 			if self._activeRound._roundDuration <= elapsedTime then
@@ -183,7 +195,7 @@ function RoundService:_beginRound(): ()
 
 	-- Initalize's the round and sort's player's into 2 teams.
 	self:_sortPlayers()
-	self:InitalizeRound(RoundServiceConstants.ROUND_NAME, RoundServiceConstants.ROUND_DURATION)
+	self:InitializeRound(RoundServiceConstants.RoundNames.BASE_ROUND_NAME, RoundServiceConstants.ROUND_DURATION)
 end
 
 --[[
@@ -202,10 +214,12 @@ function RoundService:_endRound()
 
 	self._activeRound = nil
 
-	if finishedRoundData._roundName ~= "Intermission" then
+	if finishedRoundData._roundName ~= RoundServiceConstants.RoundNames.INTERMISSION_ROUND_NAME then
 		-- Remove the team's we previously created.
 		self._TeamService:RemoveTeam(RoundServiceConstants.Teams.TEAM_RED.TEAM_NAME)
 		self._TeamService:RemoveTeam(RoundServiceConstants.Teams.TEAM_BLUE.TEAM_NAME)
+
+		RemoteEvents.OnTimerUpdateRequest:FireAllClients(RoundServiceConstants.RoundNames.INTERMISSION_ROUND_NAME)
 
 		self:_beginIntermission()
 	else
@@ -225,8 +239,10 @@ end
 	@return ()
 ]]
 function RoundService:_beginIntermission()
-	self:InitalizeRound("Intermission", RoundServiceConstants.INTERMISSION_DURATION)
-	self.RoundBegan:Fire()
+	self:InitializeRound(
+		RoundServiceConstants.RoundNames.INTERMISSION_ROUND_NAME,
+		RoundServiceConstants.INTERMISSION_DURATION
+	)
 end
 
 --[[
@@ -254,6 +270,28 @@ function RoundService:_sortPlayers(): ()
 			self._TeamService:AddPlayer(plr, RoundServiceConstants.Teams.TEAM_BLUE.TEAM_NAME)
 		end
 	end
+end
+
+--[[
+	Convert's numbers into MM:SS format for displaying on the timer.
+
+	@param number number -- The number you want to convert.
+
+	@return string
+]]
+function RoundService:_formatTime(number: number): string
+	-- Make sure the types are in check.
+	if typeof(number) ~= "number" then
+		warn(string.format("[RoundService] - Type of number %q is not a valid type.", typeof(number)))
+		return
+	end
+
+	local minutes = math.floor((number % 3600) / 60)
+	local seconds = number % 60
+
+	local concatTime = string.format("%0.2d:%0.2d", minutes, seconds)
+
+	return concatTime
 end
 
 --[[

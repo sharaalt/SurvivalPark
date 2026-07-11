@@ -1,5 +1,5 @@
 local Roact = require(game.ReplicatedStorage.Shared.Dependencies.roact)
-local TimerComponent = require(script.Parent.Components.TimerComponent)
+local TimerComponent = require(script.Parent.Components.TimerScreen)
 
 local loader = require(script.Parent.Parent.loader)
 local require = loader.load(script)
@@ -21,9 +21,7 @@ function Main:render()
 	return Roact.createElement("ScreenGui", {
 		ResetOnSpawn = false,
 	}, {
-		TimerComponent = Roact.createElement(TimerComponent, {
-			timerText = "00:00",
-		}),
+		TimerScreen = Roact.createElement(TimerComponent),
 	})
 end
 

@@ -1,8 +1,12 @@
 local RoundServiceConstants = {
-	MINIMUM_PLAYERS = 1,
+	DEBUG = false,
+	MINIMUM_PLAYERS = 2,
 
 	-- Round Information
-	ROUND_NAME = "Round", -- Used internally
+	RoundNames = {
+		INTERMISSION_ROUND_NAME = "Intermission",
+		BASE_ROUND_NAME = "Round",
+	},
 	INTERMISSION_DURATION = 10,
 	POST_GAME_DURATION = 10,
 	ROUND_DURATION = 5, -- Expressed in seconds
