@@ -2,6 +2,10 @@
 
 ## Overview
 
+- **Author:** sharafzada
+- **Class:** `RoundService.luau`
+- **Version:** `1.0.2`
+
 RoundService is the server-side system that handles the entire process of rounds from creation, to UI updates, and lifecycle events. The system determines active player's and which team eventually win's the game.
 
 **What RoundService Does:**
