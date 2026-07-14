@@ -10,15 +10,14 @@ local ServiceBag = require("ServiceBag")
 local SurvivalParkServiceClient = {}
 SurvivalParkServiceClient.ServiceName = "SurvivalParkServiceClient"
 
-export type SurvivalParkServiceClient =
-	typeof(setmetatable(
-		{} :: {
-			_serviceBag: ServiceBag.ServiceBag,
-		},
-		{} :: typeof({ __index = SurvivalParkServiceClient })
-	))
+export type SurvivalParkServiceClient = typeof(setmetatable(
+	{} :: {
+		_serviceBag: ServiceBag.ServiceBag,
+	},
+	{} :: typeof({ __index = SurvivalParkServiceClient })
+))
 
-function SurvivalParkServiceClient.Init(self: SurvivalParkServiceClient,serviceBag: ServiceBag.ServiceBag): ()
+function SurvivalParkServiceClient.Init(self: SurvivalParkServiceClient, serviceBag: ServiceBag.ServiceBag): ()
 	assert(not (self :: any)._serviceBag, "Already initialized")
 	self._serviceBag = assert(serviceBag, "No serviceBag")
 
@@ -27,6 +26,7 @@ function SurvivalParkServiceClient.Init(self: SurvivalParkServiceClient,serviceB
 
 	-- Internal
 	self._serviceBag:GetService(require("SurvivalParkTranslator"))
+	self._serviceBag:GetService(require("UIService"))
 end
 
 return SurvivalParkServiceClient

@@ -1,4 +1,4 @@
-# RoundService Docummentation
+# RoundService Documentation
 
 ## Overview
 
@@ -153,7 +153,7 @@ XP_MULTIPLIER = 5,
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `InitializeRound(roundName, roundDuration, ...) | void | Initalize's a new round |
+| `InitializeRound(roundName, roundDuration, ...)` | void | Initalize's a new round |
 
 ### Signals
 

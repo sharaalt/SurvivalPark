@@ -1,7 +1,7 @@
 --[[
     @author sharafzada
     @class MapService.luau
-    @version 1.0.0
+    @version 1.0.1
 
     -- To-do list
     @todo
@@ -10,7 +10,7 @@
 ]]
 
 -- External Services
-local MapServiceProfile = require(script.Parent.MapServiceProfile)
+local BaseMap = require(script.Parent.Classes.BaseMap)
 local Types = require(script.Parent.Types)
 local MapFolder = game.ReplicatedStorage.Shared.Maps
 
@@ -33,7 +33,7 @@ function MapService:Init(serviceBag)
 	self._maid = Maid.new()
 
 	-- Variables
-	self._mapCache = {} :: { [string]: Types.MapCahce }
+	self._activeMaps = {} :: { [string]: Types.BaseMapClass }
 
 	-- Signals
 	self.MapCreated = Signal.new()
@@ -67,8 +67,8 @@ function MapService:LoadMap(mapName: string, cacheName: string, ...: any): ()
 	-- Access the map in the map folder.
 	local map = MapFolder:FindFirstChild(mapName)
 
-	-- If it exist's in the cache we throw a warning.
-	if self._mapCache[cacheName] then
+	-- If it exist's in the registry we throw a warning.
+	if self._activeMaps[cacheName] then
 		warn(string.format("[MapSerice] - A map already exist's in the cache with the name %q", cacheName))
 		return
 	end
@@ -80,12 +80,11 @@ function MapService:LoadMap(mapName: string, cacheName: string, ...: any): ()
 		mapClone.Parent = (...) or game.Workspace
 
 		-- Bind the table to the cache.
-		local mapTbl = MapServiceProfile.CreateMapCache(mapName, mapClone)
-		self._mapCache[cacheName] = mapTbl
+		self._activeMaps[cacheName] = BaseMap.new(mapName, mapClone)
 
 		-- Print out a confirmation and fire a signal.
 		print(string.format("[MapService] - Sucessfully cached %q into the map cache.", mapName))
-		self.MapCreated:Fire(mapName)
+		self.MapCreated:Fire(mapName, cacheName)
 
 		return
 	else
@@ -94,13 +93,49 @@ function MapService:LoadMap(mapName: string, cacheName: string, ...: any): ()
 end
 
 --[[
+	Retrive's the map object for direct update's.
+
+	@param cacheName string -- The name of the map in the cache.
+
+	@return any
+]]
+function MapService:GetMap(cacheName: string): ()
+	-- Make sure it exists before proceeding.
+	if not self._activeMaps[cacheName] then
+		warn(string.format("[MapService] - No map exists in the cache with the cache name %q", cacheName))
+		return
+	end
+
+	return self._activeMaps[cacheName]
+end
+
+--[[
 	Unload's an actively loaded map based off name.
 
-	@param mapName string -- The name of the map you want to unload.
+	@param cacheName string -- The cache name of the map you want to unload.
 
 	@return ()
 ]]
-function MapService:UnLoadMap(mapName: string): () end
+function MapService:UnloadMap(cacheName: string): ()
+	-- Make sure it exists in the directory.
+	if not self._activeMaps[cacheName] then
+		warn(string.format("[MapService] - No map exists in the cache with the cache name %q", cacheName))
+		return
+	end
+
+	-- Make it a bit easier to access.
+	local mapData: Types.BaseMapClass = self._activeMaps[cacheName]
+
+	-- Deletes the class and removes it from the directory.
+	self._activeMaps[cacheName] = nil
+	mapData:Destroy()
+
+	-- Print success and throw a signal.
+	print(string.format("[MapService] - Sucessfully deleted map with in cache %q", cacheName))
+	self.MapDestroyed:Fire(cacheName)
+
+	return
+end
 
 -- ==================
 -- === Private API ==

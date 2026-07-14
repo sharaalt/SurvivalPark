@@ -5,6 +5,7 @@
 
     -- To-Do list
     @todo Integrate UI
+	@todo Refactor
 
     The round service is meant to handle the creation of rounds, round events, and post round cleanup. Furthermore, it also
     interacts with the UI via remote events and provides signals which are able to be observed.

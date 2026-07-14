@@ -26,6 +26,7 @@ function SurvivalParkService.Init(self: SurvivalParkService, serviceBag: Service
 	-- Internal
 	self._serviceBag:GetService(require("SurvivalParkTranslator"))
 	self._serviceBag:GetService(require("RoundService"))
+	self._serviceBag:GetService(require("MapService"))
 end
 
 return SurvivalParkService

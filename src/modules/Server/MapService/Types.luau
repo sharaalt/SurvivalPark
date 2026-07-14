@@ -1,8 +1,9 @@
 local Types = {}
 
-export type MapCahce = {
-	_mapName: string,
-	_mapInstance: Instance,
+export type BaseMapClass = {
+	new: (mapName: string, mapInstance: Model) -> (),
+	Move: (position: Vector3) -> (),
+	Destroy: () -> (),
 }
 
 return Types
