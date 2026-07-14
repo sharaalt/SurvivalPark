@@ -1,5 +1,5 @@
 local RoundServiceConstants = {
-	DEBUG = false,
+	DEBUG = false, -- Useless at the moment will update in due time :-]
 	MINIMUM_PLAYERS = 2,
 
 	-- Round Information

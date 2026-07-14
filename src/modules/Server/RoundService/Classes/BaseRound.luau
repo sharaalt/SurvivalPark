@@ -19,12 +19,12 @@ local Maid = require("Maid")
 local Signal = require("Signal")
 local BaseObject = require("BaseObject")
 
-local RoundClass = {}
-RoundClass.ClassName = "RoundClass"
-RoundClass.__index = RoundClass
+local BaseRound = {}
+BaseRound.ClassName = "BaseRound"
+BaseRound.__index = BaseRound
 
-function RoundClass.new(roundName: string, roundDuration: number, roundPlayers: { Player })
-	local self = setmetatable(BaseObject.new(), RoundClass)
+function BaseRound.new(roundName: string, roundDuration: number, roundPlayers: { Player })
+	local self = setmetatable(BaseObject.new(), BaseRound)
 
 	-- Variables
 	self._roundData = RoundServiceProfile.CreateRoundTable(roundName, roundDuration, roundPlayers) :: Types.RoundTable
@@ -34,7 +34,7 @@ function RoundClass.new(roundName: string, roundDuration: number, roundPlayers: 
 	self._maid = Maid.new()
 
 	-- Signals
-	self.RonudBegan = Signal.new()
+	self.RoundStarted = Signal.new()
 	self.RoundEnded = Signal.new()
 
 	return self
@@ -48,28 +48,39 @@ end
 
     @return ()
 ]]
-function RoundClass:StartRound(): () end
+function BaseRound:StartRound(): ()
+	self:_main()
+end
 
 --[[
     Assign's user's evenly to hunter or hider teams.
 
     @return ()
 ]]
-function RoundClass:AssignTeams(): () end
+function BaseRound:AssignTeams(): () end
+
+--[[
+	End's the round.
+]]
+function BaseRound:EndRound(): ()
+	self:Destroy()
+end
 
 -- ==================
 -- === Private API ==
 -- ==================
 --[[
-    Houses all logic related to RoundClass.
+    Houses all logic related to BaseRound.
 
     @return ()
 ]]
-function RoundClass:_main(): ()
-	self._maid:GiveTask(self.RoundBegan:Connect(function()
+function BaseRound:_main(): ()
+	self._maid:GiveTask(self.OnRoundBeginRequest:Connect(function()
 		while true do
 			task.wait(1)
 			self:_tick()
+
+			print("And it's making straight for you :-]")
 
 			if self._elapsedTime >= self._roundData._roundDuration then
 				self.RoundEnded:Fire()
@@ -78,7 +89,9 @@ function RoundClass:_main(): ()
 		end
 	end))
 
-	self._maid:GiveTask(self.RoundEnded:Connect(function() end))
+	self._maid:GiveTask(self.OnRoundEndRequest:Connect(function()
+		self:EndRound()
+	end))
 end
 
 --[[
@@ -86,8 +99,15 @@ end
 
     @return ()
 ]]
-function RoundClass:_tick(): ()
+function BaseRound:_tick(): ()
 	self._elapsedTime += 1
 end
 
-return RoundClass
+--[[
+	Destroys and cleans up the class.
+]]
+function BaseRound:Destroy(): ()
+	self._maid:DoCleaning()
+end
+
+return BaseRound
