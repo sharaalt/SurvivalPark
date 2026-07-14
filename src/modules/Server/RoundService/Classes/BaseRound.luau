@@ -1,7 +1,7 @@
 --[[
     @author sharafzada
     @class Round.luau
-    @version 1.0.0
+    @version 1.0.2
 
     -- To-do list
     @todo De-couple RoundService logic into this.
@@ -11,7 +11,6 @@
 
 -- External Services
 local RoundServiceConstants = require(script.Parent.Parent.Parent.Parent.Shared.RoundServiceConstants)
-local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
 local Players = game:GetService("Players")
 local Types = require(script.Parent.Parent.Types)
 local RoundServiceProfile = require(script.Parent.Parent.RoundServiceProfile)
@@ -42,6 +41,8 @@ function BaseRound.new(roundName: string, roundDuration: number, roundPlayers: {
 	self.NotEnoughPlayers = Signal.new()
 	self.RoundStarted = Signal.new()
 	self.RoundEnded = Signal.new()
+	self.Ticked = Signal.new()
+	self.TeamCreateRequest = Signal.new()
 
 	return self
 end
@@ -92,6 +93,8 @@ function BaseRound:_main(): ()
 
 				local numPlayers = #Players:GetPlayers()
 
+				self.Ticked:Fire(self._elapsedTime)
+
 				if self._elapsedTime >= self._roundData._roundDuration then
 					if numPlayers < RoundServiceConstants.MINIMUM_PLAYERS then
 						warn("[BaseRound] - Not enough players to maintain round.")
@@ -109,6 +112,15 @@ function BaseRound:_main(): ()
 	self._maid:GiveTask(self.RoundEnded:Connect(function()
 		self:EndRound()
 	end))
+end
+
+--[[
+	Update's the timer text.
+
+	@return ()
+]]
+function BaseRound:_updateTimerText(text): ()
+	return
 end
 
 --[[

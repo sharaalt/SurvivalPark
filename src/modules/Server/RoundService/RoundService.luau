@@ -13,6 +13,7 @@
 
 -- External Services
 local RoundServiceConstraints = require(script.Parent.Parent.Parent.Shared.RoundServiceConstants)
+local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
 local Types = require(script.Parent.Types)
 local Players = game:GetService("Players")
 
@@ -87,8 +88,20 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 
 		-- Add's the active round to the directory and begin's the round.
 		self._activeRounds[roundName] = roundClass
-
 		self.RoundCreated:Fire(roundClass)
+
+		-- Signal listening.
+		self._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
+			if typeof(text) == "string" then
+				RemoteEvents.OnTimerUpdateRequest:FireAllClients(text)
+			else
+				RemoteEvents.OnTimerUpdateRequest:FireAllClients(self:_formatTime(text))
+			end
+		end))
+
+		self._maid:GiveTask(roundClass.RoundEnded:Connect(function()
+			self._activeRounds[roundName] = nil
+		end))
 
 		print("[RonudService] - Sucessfully created a new round.")
 	else
@@ -107,6 +120,19 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 		-- Add's the active round to the directory and begin's the round.
 		self._activeRounds[roundName] = roundClass
 		self.RoundCreated:Fire(roundClass)
+
+		-- Signal listening.
+		self._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
+			if typeof(text) == "string" then
+				RemoteEvents.OnTimerUpdateRequest:FireAllClients(text)
+			else
+				RemoteEvents.OnTimerUpdateRequest:FireAllClients(self:_formatTime(text))
+			end
+		end))
+
+		self._maid:GiveTask(roundClass.RoundEnded:Connect(function()
+			self._activeRounds[roundName] = nil
+		end))
 
 		print("[RonudService] - Sucessfully created a new round.")
 	end
@@ -147,21 +173,16 @@ function RoundService:_main(): ()
 	Players.PlayerAdded:Connect(function(plr: Player)
 		local plrCount = #Players:GetPlayers()
 
-		if plrCount > RoundServiceConstraints.MINIMUM_PLAYERS then
+		if plrCount >= RoundServiceConstraints.MINIMUM_PLAYERS then
 			-- self:InitializeRound(
 			-- 	RoundServiceConstraints.RoundNames.BASE_ROUND_NAME,
 			-- 	RoundServiceConstraints.INTERMISSION_DURATION
 			-- )
+			return
+		else
+			return
 		end
 	end)
-
-	Players.PlayerAdded:Connect(function(plr: Player)
-		local plrCount = #Players:GetPlayers()
-
-		if plrCount < RoundServiceConstraints.MINIMUM_PLAYERS then
-		end
-	end)
-
 	self._maid:GiveTask(self.RoundCreated:Connect(function(roundClass: Types.BaseRound)
 		-- roundClass:StartRound()
 	end))
