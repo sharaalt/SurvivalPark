@@ -12,11 +12,9 @@
 ]]
 
 -- External Services
-local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
-local RoundServiceConstants = require(script.Parent.Parent.Parent.Shared.RoundServiceConstants)
-local Players = game:GetService("Players")
+local RoundServiceConstraints = require(script.Parent.Parent.Parent.Shared.RoundServiceConstants)
 local Types = require(script.Parent.Types)
-local BaseRound = require(script.Parent.Classes.BaseRound)
+local Players = game:GetService("Players")
 
 local loader = require(script.Parent.Parent.loader) :: any
 local require = loader.load(script)
@@ -38,7 +36,14 @@ function RoundService:Init(serviceBag)
 	self._TeamService = self._serviceBag:GetService(require("TeamService"))
 
 	-- Variables
-	self._activeRounds = nil :: { [string]: Types.BaseRound }
+	self._activeRounds = {} :: { [string]: Types.BaseRound }
+
+	-- Signals
+	self.RoundCreated = Signal.new()
+
+	self._maid:GiveTask(task.spawn(function()
+		self:_main()
+	end))
 end
 
 -- ==================
@@ -65,19 +70,46 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 	end
 
 	-- Make sure there isn't an active round.
-	if self._activeRound then
-		warn("[RoundService] - A round is already active.")
+	if self._activeRounds[roundName] then
+		warn("[RoundService] - A round is already active in that name.")
 		return
 	end
 
-	-- Initalizes a new round class.
-	local roundClass = BaseRound.new(roundName, roundDuration, ...)
+	-- Retrive the class from the class folder.
+	local class = script.Parent.Classes:FindFirstChild(roundName)
 
-	-- Add's the active round to the directory and begin's the round.
-	self._activeRounds[roundName] = roundClass
-	roundClass:StartRound()
+	if class then
+		-- Require the class before accessing.
+		local reqClass = require(class)
 
-	print("[RonudService] - Sucessfully created a new round.")
+		-- Initalizes a new round class.
+		local roundClass = reqClass.new(roundName, roundDuration, ...)
+
+		-- Add's the active round to the directory and begin's the round.
+		self._activeRounds[roundName] = roundClass
+
+		self.RoundCreated:Fire(roundClass)
+
+		print("[RonudService] - Sucessfully created a new round.")
+	else
+		warn(
+			string.format(
+				"[RoundService] - Could not retrive a class with the name %q assuming BaseRound instead.",
+				roundName
+			)
+		)
+
+		local BaseRound = require(script.Parent.Classes.BaseRound)
+
+		-- Initalizes a new round class.
+		local roundClass = BaseRound.new(roundName, roundDuration, ...)
+
+		-- Add's the active round to the directory and begin's the round.
+		self._activeRounds[roundName] = roundClass
+		self.RoundCreated:Fire(roundClass)
+
+		print("[RonudService] - Sucessfully created a new round.")
+	end
 end
 
 --[[
@@ -100,6 +132,41 @@ end
 -- ==================
 -- === Private API ==
 -- ==================
+--[[
+	The main logic for the RoundService
+
+	@return ()
+]]
+function RoundService:_main(): ()
+	self:InitializeRound(
+		RoundServiceConstraints.RoundNames.INTERMISSION_ROUND_NAME,
+		RoundServiceConstraints.INTERMISSION_DURATION
+	)
+
+	-- Player Service Functions
+	Players.PlayerAdded:Connect(function(plr: Player)
+		local plrCount = #Players:GetPlayers()
+
+		if plrCount > RoundServiceConstraints.MINIMUM_PLAYERS then
+			-- self:InitializeRound(
+			-- 	RoundServiceConstraints.RoundNames.BASE_ROUND_NAME,
+			-- 	RoundServiceConstraints.INTERMISSION_DURATION
+			-- )
+		end
+	end)
+
+	Players.PlayerAdded:Connect(function(plr: Player)
+		local plrCount = #Players:GetPlayers()
+
+		if plrCount < RoundServiceConstraints.MINIMUM_PLAYERS then
+		end
+	end)
+
+	self._maid:GiveTask(self.RoundCreated:Connect(function(roundClass: Types.BaseRound)
+		-- roundClass:StartRound()
+	end))
+end
+
 --[[
 	Convert's numbers into MM:SS format for displaying on the timer.
 

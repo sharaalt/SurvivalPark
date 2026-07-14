@@ -15,4 +15,9 @@ export type BaseRound = {
 	Destroy: (self: BaseRound) -> (),
 }
 
+export type Intermission = {
+	new: (roundName: string, roundDuration: number, roundPlayers: { Player }) -> BaseRound,
+	_main: (self: Intermission) -> (),
+}
+
 return Types

@@ -10,7 +10,7 @@
 ]]
 
 -- External Services
-local loader = require(script.Parent.Parent.loader) :: any
+local loader = require(script.Parent.Parent.Parent.loader) :: any
 local require = loader.load(script)
 
 -- Internal Services

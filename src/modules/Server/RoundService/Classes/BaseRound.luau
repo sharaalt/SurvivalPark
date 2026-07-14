@@ -5,13 +5,18 @@
 
     -- To-do list
     @todo De-couple RoundService logic into this.
+
+	The base class used for rounds.
 ]]
 
 -- External Services
+local RoundServiceConstants = require(script.Parent.Parent.Parent.Parent.Shared.RoundServiceConstants)
+local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
+local Players = game:GetService("Players")
 local Types = require(script.Parent.Parent.Types)
 local RoundServiceProfile = require(script.Parent.Parent.RoundServiceProfile)
 
-local loader = require(script.Parent.Parent.loader) :: any
+local loader = require(script.Parent.Parent.Parent.loader) :: any
 local require = loader.load(script)
 
 -- Internal Services
@@ -19,9 +24,9 @@ local Maid = require("Maid")
 local Signal = require("Signal")
 local BaseObject = require("BaseObject")
 
-local BaseRound = {}
-BaseRound.ClassName = "BaseRound"
+local BaseRound = setmetatable({}, BaseObject)
 BaseRound.__index = BaseRound
+BaseRound.ClassName = "BaseRound"
 
 function BaseRound.new(roundName: string, roundDuration: number, roundPlayers: { Player })
 	local self = setmetatable(BaseObject.new(), BaseRound)
@@ -34,6 +39,7 @@ function BaseRound.new(roundName: string, roundDuration: number, roundPlayers: {
 	self._maid = Maid.new()
 
 	-- Signals
+	self.NotEnoughPlayers = Signal.new()
 	self.RoundStarted = Signal.new()
 	self.RoundEnded = Signal.new()
 
@@ -49,7 +55,10 @@ end
     @return ()
 ]]
 function BaseRound:StartRound(): ()
-	self:_main()
+	self._maid:GiveTask(task.spawn(function()
+		self:_main()
+		self.RoundStarted:Fire()
+	end))
 end
 
 --[[
@@ -75,21 +84,29 @@ end
     @return ()
 ]]
 function BaseRound:_main(): ()
-	self._maid:GiveTask(self.OnRoundBeginRequest:Connect(function()
-		while true do
-			task.wait(1)
-			self:_tick()
+	self._maid:GiveTask(self.RoundStarted:Connect(function()
+		self._maid:GiveTask(task.spawn(function()
+			while true do
+				task.wait(1)
+				self:_tick()
 
-			print("And it's making straight for you :-]")
+				local numPlayers = #Players:GetPlayers()
 
-			if self._elapsedTime >= self._roundData._roundDuration then
-				self.RoundEnded:Fire()
-				break
+				if self._elapsedTime >= self._roundData._roundDuration then
+					if numPlayers < RoundServiceConstants.MINIMUM_PLAYERS then
+						warn("[BaseRound] - Not enough players to maintain round.")
+						self.NotEnoughPlayers:Fire() -- Make sure this fires so listeners know it stopped!
+						break
+					else
+						self.RoundEnded:Fire()
+						break
+					end
+				end
 			end
-		end
+		end))
 	end))
 
-	self._maid:GiveTask(self.OnRoundEndRequest:Connect(function()
+	self._maid:GiveTask(self.RoundEnded:Connect(function()
 		self:EndRound()
 	end))
 end

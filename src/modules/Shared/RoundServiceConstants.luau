@@ -5,9 +5,9 @@ local RoundServiceConstants = {
 	-- Round Information
 	RoundNames = {
 		INTERMISSION_ROUND_NAME = "Intermission",
-		BASE_ROUND_NAME = "Round",
+		BASE_ROUND_NAME = "BaseRound",
 	},
-	INTERMISSION_DURATION = 10,
+	INTERMISSION_DURATION = 2,
 	POST_GAME_DURATION = 10,
 	ROUND_DURATION = 5, -- Expressed in seconds
 
