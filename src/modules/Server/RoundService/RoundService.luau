@@ -77,65 +77,36 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 	end
 
 	-- Retrive the class from the class folder.
-	local class = script.Parent.Classes:FindFirstChild(roundName)
+	local class = self:_getClass(roundName)
 
-	if class then
-		-- Require the class before accessing.
-		local reqClass = require(class)
+	-- Require the class before accessing.
+	local reqClass = require(class)
 
-		-- Initalizes a new round class.
-		local roundClass = reqClass.new(roundName, roundDuration, ...)
+	-- Initalizes a new round class.
+	local roundClass = reqClass.new(roundName, roundDuration, ...)
 
-		-- Add's the active round to the directory and begin's the round.
-		self._activeRounds[roundName] = roundClass
-		self.RoundCreated:Fire(roundClass)
+	-- Add's the active round to the directory and begin's the round.
+	self._activeRounds[roundName] = roundClass
+	self.RoundCreated:Fire(roundClass)
 
-		-- Signal listening.
-		self._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
-			if typeof(text) == "string" then
-				RemoteEvents.OnTimerUpdateRequest:FireAllClients(text)
-			else
-				RemoteEvents.OnTimerUpdateRequest:FireAllClients(self:_formatTime(text))
-			end
-		end))
+	-- Signal listening.
+	self._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
+		if typeof(text) == "string" then
+			RemoteEvents.OnTimerUpdateRequest:FireAllClients(text)
+		else
+			RemoteEvents.OnTimerUpdateRequest:FireAllClients(self:_formatTime(text))
+		end
+	end))
 
-		self._maid:GiveTask(roundClass.RoundEnded:Connect(function()
-			self._activeRounds[roundName] = nil
-		end))
+	self._maid:GiveTask(roundClass.RoundEnded:Connect(function()
+		self._activeRounds[roundName] = nil
+	end))
 
-		print("[RonudService] - Sucessfully created a new round.")
-	else
-		warn(
-			string.format(
-				"[RoundService] - Could not retrive a class with the name %q assuming BaseRound instead.",
-				roundName
-			)
-		)
+	self._maid:GiveTask(roundClass.TeamAddRequest:Connect(function(player: Player, teamName: string)
+		self._TeamService:AddPlayer(player, teamName)
+	end))
 
-		local BaseRound = require(script.Parent.Classes.BaseRound)
-
-		-- Initalizes a new round class.
-		local roundClass = BaseRound.new(roundName, roundDuration, ...)
-
-		-- Add's the active round to the directory and begin's the round.
-		self._activeRounds[roundName] = roundClass
-		self.RoundCreated:Fire(roundClass)
-
-		-- Signal listening.
-		self._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
-			if typeof(text) == "string" then
-				RemoteEvents.OnTimerUpdateRequest:FireAllClients(text)
-			else
-				RemoteEvents.OnTimerUpdateRequest:FireAllClients(self:_formatTime(text))
-			end
-		end))
-
-		self._maid:GiveTask(roundClass.RoundEnded:Connect(function()
-			self._activeRounds[roundName] = nil
-		end))
-
-		print("[RonudService] - Sucessfully created a new round.")
-	end
+	print("[RonudService] - Sucessfully created a new round.")
 end
 
 --[[
@@ -208,6 +179,32 @@ function RoundService:_formatTime(number: number): string
 	local concatTime = string.format("%0.2d:%0.2d", minutes, seconds)
 
 	return concatTime
+end
+
+--[[
+	Retrives the correct round class.
+
+	@param roundName string -- The name of the round you want to find.
+
+	@return any
+]]
+function RoundService:_getClass(roundName: string): any
+	-- Make sure the type is in check.
+	if typeof(roundName) ~= "string" then
+		warn(string.format("[RoundService] - Type of roundName %q is not a valid type.", typeof(roundName)))
+		return
+	end
+
+	-- Access the module.
+	local module = script.Parent.Classes:WaitForChild(roundName)
+
+	-- If it exists return it else error and return BaseRound.
+	if module then
+		return module
+	else
+		warn(string.format("[RoundService] - Could not find %q returning BaseClass.", roundName))
+		return script.Parent.Classes.BaseRound
+	end
 end
 
 --[[

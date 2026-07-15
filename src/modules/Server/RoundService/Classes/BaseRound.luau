@@ -12,6 +12,7 @@
 -- External Services
 local RoundServiceConstants = require(script.Parent.Parent.Parent.Parent.Shared.RoundServiceConstants)
 local Players = game:GetService("Players")
+-- local Teams = game:GetService("Teams")
 local Types = require(script.Parent.Parent.Types)
 local RoundServiceProfile = require(script.Parent.Parent.RoundServiceProfile)
 
@@ -38,11 +39,13 @@ function BaseRound.new(roundName: string, roundDuration: number, roundPlayers: {
 	self._maid = Maid.new()
 
 	-- Signals
+	self.EnoughPlayers = Signal.new()
 	self.NotEnoughPlayers = Signal.new()
 	self.RoundStarted = Signal.new()
 	self.RoundEnded = Signal.new()
 	self.Ticked = Signal.new()
 	self.TeamCreateRequest = Signal.new()
+	self.TeamAddRequest = Signal.new()
 
 	return self
 end
@@ -67,7 +70,16 @@ end
 
     @return ()
 ]]
-function BaseRound:AssignTeams(): () end
+function BaseRound:AssignTeams(): ()
+	for i, v in pairs(Players:GetPlayers()) do
+		local randNum = math.random()
+
+		if randNum <= 0.1 then
+		else
+			print("10")
+		end
+	end
+end
 
 --[[
 	End's the round.
@@ -112,15 +124,6 @@ function BaseRound:_main(): ()
 	self._maid:GiveTask(self.RoundEnded:Connect(function()
 		self:EndRound()
 	end))
-end
-
---[[
-	Update's the timer text.
-
-	@return ()
-]]
-function BaseRound:_updateTimerText(text): ()
-	return
 end
 
 --[[

@@ -1,7 +1,7 @@
 --[[
     @author sharafzada
     @class Intermission.luau
-    @version 1.0.0
+    @version 1.0.1 		 	
 
     -- To-do list
     @todo Finish the Intermission lifecycle
@@ -27,9 +27,6 @@ Intermission.ClassName = "Intermission"
 function Intermission.new(roundName, roundDuration, roundPlayers)
 	local self = setmetatable(BaseRound.new(roundName, roundDuration, roundPlayers), Intermission)
 
-	-- Signals
-	self.MinPlayersAchieved = Signal.new()
-
 	self._maid:GiveTask(task.spawn(function()
 		self:StartRound()
 	end))
@@ -48,19 +45,26 @@ end
 function Intermission:_main(): ()
 	BaseRound._main(self)
 
-	-- Player Signals
+	-- Round Signals
 	self._maid:GiveTask(self.NotEnoughPlayers:Connect(function()
 		-- If there isn't enough player's restart intermission till there is.
 		if self:_getPlayerAmount() < RoundServiceConstants.MINIMUM_PLAYERS then
 			warn("[IntermissionClass] - Not enough people to begin the round restarting intermission.")
 			self._elapsedTime = 0
-			self.RoundStarted:Fire()
+			self.Ticked:Fire("Not enough players (2+ players)")
+			-- self.RoundStarted:Fire()
 		else
-			self.MinPlayersAchieved:Fire()
+			self.EnoughPlayers:Fire()
 		end
 	end))
 
-	-- Round Signals
+	self._maid:GiveTask(Players.PlayerAdded:Connect(function(plr: Player)
+		if self:_getPlayerAmount() >= RoundServiceConstants.MINIMUM_PLAYERS then
+			self.EnoughPlayers:Fire()
+			self:Destroy(self)
+		end
+	end))
+
 	self._maid:GiveTask(self.RoundEnded:Connect(function()
 		print("[IntermissionClass] - Intermission finished preparing to clean up.")
 	end))
