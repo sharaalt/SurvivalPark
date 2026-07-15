@@ -11,9 +11,11 @@
 ]]
 
 -- External Services
+local TimerScreen = require(game.ReplicatedStorage.SurvivalPark.game.Client.UI.TimerScreen)
+local SideBarScreen = require(game.ReplicatedStorage.SurvivalPark.game.Client.UI.SideBarScreen)
+
 local PlayerGui = game:GetService("Players").LocalPlayer.PlayerGui
 local Roact = require(game.ReplicatedStorage.Shared.Dependencies.roact)
-local TimerScreen = require(game.ReplicatedStorage.SurvivalPark.game.Client.UI.TimerScreen)
 local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
 local loader = require(script.Parent.Parent.loader) :: any
 local require = loader.load(script)
@@ -46,6 +48,13 @@ function UIService:Start(): ()
 	-- UI Initalization
 	Roact.mount(
 		Roact.createElement(TimerScreen, {
+			_serviceBag = self._serviceBag,
+		}),
+		PlayerGui
+	)
+
+	Roact.mount(
+		Roact.createElement(SideBarScreen, {
 			_serviceBag = self._serviceBag,
 		}),
 		PlayerGui

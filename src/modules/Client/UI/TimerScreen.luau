@@ -6,6 +6,9 @@ local Maid = require("Maid")
 
 local TimerComponent = Roact.Component:extend("TimerScreen")
 
+local SPECTATE_ON_IMAGE = "rbxassetid://109949344440318"
+local SPECTATE_OFF_IMAGE = "rbxassetid://76329406952624"
+
 function TimerComponent:init(props)
 	self._maid = Maid.new()
 	self._serviceBag = props._serviceBag
@@ -13,6 +16,8 @@ function TimerComponent:init(props)
 
 	self:setState({
 		timerText = "00:00",
+		spectateEnabled = false,
+		spectateImage = SPECTATE_ON_IMAGE,
 	})
 end
 
@@ -36,6 +41,29 @@ function TimerComponent:render()
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 		}, {
+			SpectateButton = Roact.createElement("ImageButton", {
+				Image = self.state.spectateImage,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(0.04, 0.07),
+				Position = UDim2.fromScale(0.38, 0.04),
+				ZIndex = -1,
+
+				[Roact.Event.MouseButton1Click] = function()
+					if self.state.spectateImage == SPECTATE_ON_IMAGE then
+						self:setState({
+							spectateImage = SPECTATE_OFF_IMAGE,
+						})
+					else
+						self:setState({
+							spectateImage = SPECTATE_ON_IMAGE,
+						})
+					end
+
+					self:setState({
+						spectateEnabled = not self.state.spectateEnabled,
+					})
+				end,
+			}),
 			TimerBackground = Roact.createElement("ImageLabel", {
 				Position = UDim2.fromScale(0.413, 0.027),
 				Size = UDim2.fromScale(0.156, 0.097),
