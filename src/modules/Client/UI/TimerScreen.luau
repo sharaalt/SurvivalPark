@@ -36,28 +36,24 @@ function TimerComponent:render()
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 		}, {
-			TimerChip = Roact.createElement("Frame", {
-				Position = UDim2.fromScale(0.388, 0.035),
-				Size = UDim2.fromScale(0.223, 0.133),
-				BackgroundTransparency = 0.2,
-				BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+			TimerBackground = Roact.createElement("ImageLabel", {
+				Position = UDim2.fromScale(0.413, 0.027),
+				Size = UDim2.fromScale(0.156, 0.097),
+				Image = "rbxassetid://115546034312694",
+				BackgroundTransparency = 1,
 			}, {
-				UIAspectRatioConstraint = Roact.createElement("UIAspectRatioConstraint", {
-					AspectRatio = 3.385,
-				}),
-				UICorner = Roact.createElement("UICorner", {
-					CornerRadius = UDim.new(0, 8),
-				}),
-				UIStroke = Roact.createElement("UIStroke", {
-					Color = Color3.fromRGB(255, 255, 255),
-					Thickness = 2,
-				}),
 				TimerText = Roact.createElement("TextLabel", {
 					Size = UDim2.fromScale(1, 1),
+					Position = UDim2.fromScale(0, 0),
 					BackgroundTransparency = 1,
-					TextColor3 = Color3.fromRGB(255, 255, 255),
 					Text = self.state.timerText,
-					TextSize = 20,
+					TextScaled = true,
+					TextColor3 = Color3.fromRGB(255, 255, 255),
+					FontFace = Font.fromEnum(Enum.Font.FredokaOne),
+				}, {
+					UIStroke = Roact.createElement("UIStroke", {
+						Thickness = 3.5,
+					}),
 				}),
 			}),
 		}),
