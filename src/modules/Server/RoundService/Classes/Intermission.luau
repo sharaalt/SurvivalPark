@@ -66,6 +66,7 @@ function Intermission:_main(): ()
 
 	self._maid:GiveTask(self.RoundEnded:Connect(function()
 		print("[IntermissionClass] - Intermission finished preparing to clean up.")
+		self:_beginNewRound()
 	end))
 end
 

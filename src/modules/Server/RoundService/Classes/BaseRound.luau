@@ -47,8 +47,10 @@ function BaseRound.new(roundName: string, roundDuration: number, roundPlayers: {
 	self.RoundEnded = Signal.new()
 	self.Ticked = Signal.new()
 	self.TeamCreateRequest = Signal.new()
+	self.TeamDestroyRequest = Signal.new()
 	self.TeamAddRequest = Signal.new()
 	self.CreateNewClass = Signal.new()
+	self.CreateNewMap = Signal.new()
 
 	return self
 end
@@ -77,14 +79,20 @@ function BaseRound:AssignTeams(): ()
 	self.TeamCreateRequest:Fire(RoundServiceConstants.Teams.TEAM_RED)
 	self.TeamCreateRequest:Fire(RoundServiceConstants.Teams.TEAM_BLUE)
 
-	for _, v in pairs(Players:GetPlayers()) do
-		local randNum = math.random()
+	local playersTable = Players:GetPlayers()
 
-		if randNum <= 0.1 then
-			print("Red spy in the base!")
+	for i = #playersTable, -2, 1 do
+		local j = math.random(1, i)
+
+		playersTable[i], playersTable[j] = playersTable[j], playersTable[i]
+	end
+
+	local randNum = math.ceil(#playersTable * 0.1)
+
+	for i, v in pairs(playersTable) do
+		if i <= randNum then
 			self.TeamAddRequest:Fire(v, RoundServiceConstants.Teams.TEAM_RED.TEAM_NAME)
 		else
-			print("Attenzione!")
 			self.TeamAddRequest:Fire(v, RoundServiceConstants.Teams.TEAM_BLUE.TEAM_NAME)
 		end
 	end

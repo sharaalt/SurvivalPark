@@ -10,6 +10,8 @@
 ]]
 
 -- External Services
+local RoundServiceConstants = require(script.Parent.Parent.Parent.Parent.Shared.RoundServiceConstants)
+local Players = game:GetService("Players")
 local BaseRound = require(script.Parent.BaseRound)
 local loader = require(script.Parent.Parent.Parent.loader) :: any
 local require = loader.load(script)
@@ -27,11 +29,6 @@ function Round.new(roundName, roundDuration, roundPlayers)
 	-- Services
 	self._maid = Maid.new()
 
-	self._maid:GiveTask(task.spawn(function()
-		self:AssignTeams()
-		self:StartRound()
-	end))
-
 	return self
 end
 
@@ -39,13 +36,40 @@ end
 -- == Private API ===
 -- ==================
 --[[
+	Start's the round but add's a delay.
+
+	@return ()
+]]
+function Round:StartRound(): ()
+	self.Ticked:Fire("Setting up round")
+
+	self._maid:GiveTask(task.delay(5, function()
+		self:_main()
+		self.RoundStarted:Fire()
+	end))
+end
+
+--[[
+	End's the round and begin's intermisison.
+
+	@return ()
+]]
+function Round:EndRound(): ()
+	BaseRound.EndRound(self)
+end
+
+--[[
     Logic housing for the Round class.
 
     @return ()
 ]]
 function Round:_main(): ()
-	self:AssignTeams()
 	BaseRound._main(self)
+	self:AssignTeams()
+
+	self._maid:GiveTask(self.RoundEnded:Connect(function()
+		self.CreateNewClass:Fire("PostRound", RoundServiceConstants.ROUND_DURATION, Players:GetPlayers())
+	end))
 end
 
 return Round

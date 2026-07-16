@@ -87,12 +87,9 @@ function RoundService:InitalizeRound(roundName: string, roundDuration: number, .
 
 	-- Add's the active round to the directory and begin's the round.
 	self._activeRound = roundClass
-	self.RoundCreated:Fire(roundClass)
 
 	-- Signal listening.
 	roundClass._maid:GiveTask(roundClass.TeamCreateRequest:Connect(function(teamData: any)
-		print(teamData)
-		print("funNil")
 		self._TeamService:CreateTeam(teamData.TEAM_NAME, teamData.TEAM_COLOUR)
 	end))
 
@@ -112,12 +109,19 @@ function RoundService:InitalizeRound(roundName: string, roundDuration: number, .
 		self._TeamService:AddPlayer(player, teamName)
 	end))
 
+	roundClass._maid:GiveTask(roundClass.TeamDestroyRequest:Connect(function(teamName: string)
+		self._TeamService:RemoveTeam(teamName)
+	end))
+
 	roundClass._maid:GiveTask(
 		roundClass.CreateNewClass:Connect(function(className: string, roundDur: number, ...: { [number]: Player })
 			self:_cleanupRound()
 			self:InitalizeRound(className, roundDur, ...)
 		end)
 	)
+
+	-- Begin the round and print success.
+	self.RoundCreated:Fire(roundClass)
 
 	print("[RoundService] - Sucessfully created a new round.")
 end
@@ -168,7 +172,7 @@ function RoundService:_main(): ()
 		end
 	end)
 	self._maid:GiveTask(self.RoundCreated:Connect(function(roundClass: Types.BaseRound)
-		-- roundClass:StartRound()
+		roundClass:StartRound()
 	end))
 end
 
