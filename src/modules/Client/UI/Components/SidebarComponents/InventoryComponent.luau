@@ -111,6 +111,11 @@ function InventoryComponent:render()
 				}),
 			}),
 		}),
+		UIShadow = Roact.createElement("UIShadow", {
+			BlurRadius = UDim.new(0, 20),
+			Transparency = 0.5,
+			ZIndex = -1,
+		}),
 	})
 end
 

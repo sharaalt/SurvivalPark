@@ -1,6 +1,7 @@
 local Roact = require(game.ReplicatedStorage.Shared.Dependencies.roact)
 local InventoryComponent = require(script.Parent.Components.SidebarComponents.InventoryComponent)
 local StatsComponent = require(script.Parent.Components.SidebarComponents.StatsComponent)
+local StoreComponent = require(script.Parent.Components.SidebarComponents.StoreComponent)
 
 local loader = require(script.Parent.Parent.loader)
 local require = loader.load(script)
@@ -13,12 +14,33 @@ function SideBarScreen:init(props)
 	self._serviceBag = props.serviceBag
 
 	self:setState({
-		statEnabled = false,
-		invEnabled = false,
+		states = {
+			storeEnabled = false,
+			statEnabled = false,
+			invEnabled = false,
+		},
+	})
+end
+
+function SideBarScreen:setFalse(var: string)
+	local newStates = {}
+
+	for i, v in pairs(self.state.states) do
+		if i == var then
+			newStates[i] = not v
+		else
+			newStates[i] = false
+		end
+	end
+
+	self:setState({
+		states = newStates,
 	})
 end
 
 function SideBarScreen:render()
+	local states = self.state.states
+
 	return Roact.createElement("ScreenGui", {
 		ResetOnSpawn = false,
 	}, {
@@ -58,6 +80,10 @@ function SideBarScreen:render()
 				Position = UDim2.fromScale(0, 0.299),
 				BackgroundTransparency = 1,
 				Image = "rbxassetid://90263571073723",
+
+				[Roact.Event.MouseButton1Click] = function()
+					self:setFalse("storeEnabled")
+				end,
 			}),
 			InventoryButton = Roact.createElement("ImageButton", {
 				Size = UDim2.fromScale(0.121, 0.096),
@@ -66,9 +92,7 @@ function SideBarScreen:render()
 				Image = "rbxassetid://108897404451916",
 
 				[Roact.Event.MouseButton1Click] = function()
-					self:setState({
-						invEnabled = not self.state.invEnabled,
-					})
+					self:setFalse("invEnabled")
 				end,
 			}),
 			StatsButton = Roact.createElement("ImageButton", {
@@ -78,30 +102,32 @@ function SideBarScreen:render()
 				Image = "rbxassetid://81180028615310",
 
 				[Roact.Event.MouseButton1Click] = function()
-					self:setState({
-						statEnabled = not self.state.statEnabled,
-					})
+					self:setFalse("statEnabled")
 				end,
 			}),
 		}),
 
 		StatsPopup = Roact.createElement(StatsComponent, {
 			_serviceBag = self._serviceBag,
-			enabled = self.state.statEnabled,
+			enabled = states.statEnabled,
 			closeCallback = function()
-				self:setState({
-					statEnabled = not self.state.statEnabled,
-				})
+				self:setFalse()
 			end,
 		}),
 
 		InventoryPopup = Roact.createElement(InventoryComponent, {
 			_serviceBag = self._serviceBag,
-			enabled = self.state.invEnabled,
+			enabled = states.invEnabled,
 			closeCallback = function()
-				self:setState({
-					invEnabled = not self.state.invEnabled,
-				})
+				self:setFalse("invEnabled")
+			end,
+		}),
+
+		StorePoupup = Roact.createElement(StoreComponent, {
+			_serviceBag = self._serviceBag,
+			enabled = states.storeEnabled,
+			closeCallback = function()
+				self:setFalse("storeEnabled")
 			end,
 		}),
 	})
