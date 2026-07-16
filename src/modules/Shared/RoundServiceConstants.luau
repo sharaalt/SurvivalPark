@@ -1,15 +1,15 @@
 local RoundServiceConstants = {
 	DEBUG = false, -- Useless at the moment will update in due time :-]
-	MINIMUM_PLAYERS = 2,
+	MINIMUM_PLAYERS = 1,
 
 	-- Round Information
 	RoundNames = {
 		INTERMISSION_ROUND_NAME = "Intermission",
 		BASE_ROUND_NAME = "BaseRound",
 	},
-	INTERMISSION_DURATION = 2,
+	INTERMISSION_DURATION = 10,
 	POST_GAME_DURATION = 10,
-	ROUND_DURATION = 5, -- Expressed in seconds
+	ROUND_DURATION = 10, -- Expressed in seconds
 
 	-- Team Names
 	Teams = {

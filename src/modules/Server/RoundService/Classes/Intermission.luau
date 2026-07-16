@@ -51,7 +51,7 @@ function Intermission:_main(): ()
 		if self:_getPlayerAmount() < RoundServiceConstants.MINIMUM_PLAYERS then
 			warn("[IntermissionClass] - Not enough people to begin the round restarting intermission.")
 			self._elapsedTime = 0
-			self.Ticked:Fire("Not enough players (2+ players)")
+			self.Ticked:Fire(`Not enough players ({RoundServiceConstants.MINIMUM_PLAYERS}+ players)`)
 			-- self.RoundStarted:Fire()
 		else
 			self.EnoughPlayers:Fire()
@@ -60,14 +60,20 @@ function Intermission:_main(): ()
 
 	self._maid:GiveTask(Players.PlayerAdded:Connect(function(plr: Player)
 		if self:_getPlayerAmount() >= RoundServiceConstants.MINIMUM_PLAYERS then
-			self.EnoughPlayers:Fire()
-			self:Destroy(self)
+			self:_beginNewRound()
 		end
 	end))
 
 	self._maid:GiveTask(self.RoundEnded:Connect(function()
 		print("[IntermissionClass] - Intermission finished preparing to clean up.")
 	end))
+end
+
+--[[
+	Destroy's the intermission class and begin's the actual round.
+]]
+function Intermission:_beginNewRound(): ()
+	self.CreateNewClass:Fire("Round", RoundServiceConstants.ROUND_DURATION, Players:GetPlayers())
 end
 
 --[[

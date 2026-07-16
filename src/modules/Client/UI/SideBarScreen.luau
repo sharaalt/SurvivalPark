@@ -1,4 +1,5 @@
 local Roact = require(game.ReplicatedStorage.Shared.Dependencies.roact)
+local InventoryComponent = require(script.Parent.Components.SidebarComponents.InventoryComponent)
 local StatsComponent = require(script.Parent.Components.SidebarComponents.StatsComponent)
 
 local loader = require(script.Parent.Parent.loader)
@@ -13,9 +14,8 @@ function SideBarScreen:init(props)
 
 	self:setState({
 		statEnabled = false,
+		invEnabled = false,
 	})
-
-	print(self)
 end
 
 function SideBarScreen:render()
@@ -64,6 +64,12 @@ function SideBarScreen:render()
 				Position = UDim2.fromScale(0, 0.417),
 				BackgroundTransparency = 1,
 				Image = "rbxassetid://108897404451916",
+
+				[Roact.Event.MouseButton1Click] = function()
+					self:setState({
+						invEnabled = not self.state.invEnabled,
+					})
+				end,
 			}),
 			StatsButton = Roact.createElement("ImageButton", {
 				Size = UDim2.fromScale(0.121, 0.096),
@@ -85,6 +91,16 @@ function SideBarScreen:render()
 			closeCallback = function()
 				self:setState({
 					statEnabled = not self.state.statEnabled,
+				})
+			end,
+		}),
+
+		InventoryPopup = Roact.createElement(InventoryComponent, {
+			_serviceBag = self._serviceBag,
+			enabled = self.state.invEnabled,
+			closeCallback = function()
+				self:setState({
+					invEnabled = not self.state.invEnabled,
 				})
 			end,
 		}),

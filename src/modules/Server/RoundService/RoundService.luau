@@ -1,7 +1,7 @@
 --[[
     @author sharafzada
     @class RoundService.luau
-    @version 1.0.3 
+    @version 1.0.4
 
     -- To-Do list
     @todo Integrate UI
@@ -37,7 +37,7 @@ function RoundService:Init(serviceBag)
 	self._TeamService = self._serviceBag:GetService(require("TeamService"))
 
 	-- Variables
-	self._activeRounds = {} :: { [string]: Types.BaseRound }
+	self._activeRound = nil :: { [string]: Types.BaseRound }
 
 	-- Signals
 	self.RoundCreated = Signal.new()
@@ -59,7 +59,7 @@ end
 
     @return ()
 ]]
-function RoundService:InitializeRound(roundName: string, roundDuration: number, ...: { [number]: Player }): ()
+function RoundService:InitalizeRound(roundName: string, roundDuration: number, ...: { [number]: Player }): ()
 	if typeof(roundName) ~= "string" then
 		warn(string.format("[RoundService] - Type of roundName %q is not a valid type.", typeof(roundName)))
 		return
@@ -71,8 +71,8 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 	end
 
 	-- Make sure there isn't an active round.
-	if self._activeRounds[roundName] then
-		warn("[RoundService] - A round is already active in that name.")
+	if self._activeRound then
+		warn("[RoundService] - A round is already active.")
 		return
 	end
 
@@ -86,11 +86,17 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 	local roundClass = reqClass.new(roundName, roundDuration, ...)
 
 	-- Add's the active round to the directory and begin's the round.
-	self._activeRounds[roundName] = roundClass
+	self._activeRound = roundClass
 	self.RoundCreated:Fire(roundClass)
 
 	-- Signal listening.
-	self._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
+	roundClass._maid:GiveTask(roundClass.TeamCreateRequest:Connect(function(teamData: any)
+		print(teamData)
+		print("funNil")
+		self._TeamService:CreateTeam(teamData.TEAM_NAME, teamData.TEAM_COLOUR)
+	end))
+
+	roundClass._maid:GiveTask(roundClass.Ticked:Connect(function(text: string | number)
 		if typeof(text) == "string" then
 			RemoteEvents.OnTimerUpdateRequest:FireAllClients(text)
 		else
@@ -98,15 +104,22 @@ function RoundService:InitializeRound(roundName: string, roundDuration: number, 
 		end
 	end))
 
-	self._maid:GiveTask(roundClass.RoundEnded:Connect(function()
-		self._activeRounds[roundName] = nil
+	roundClass._maid:GiveTask(roundClass.RoundEnded:Connect(function()
+		self:_cleanupRound()
 	end))
 
-	self._maid:GiveTask(roundClass.TeamAddRequest:Connect(function(player: Player, teamName: string)
+	roundClass._maid:GiveTask(roundClass.TeamAddRequest:Connect(function(player: Player, teamName: string)
 		self._TeamService:AddPlayer(player, teamName)
 	end))
 
-	print("[RonudService] - Sucessfully created a new round.")
+	roundClass._maid:GiveTask(
+		roundClass.CreateNewClass:Connect(function(className: string, roundDur: number, ...: { [number]: Player })
+			self:_cleanupRound()
+			self:InitalizeRound(className, roundDur, ...)
+		end)
+	)
+
+	print("[RoundService] - Sucessfully created a new round.")
 end
 
 --[[
@@ -118,12 +131,12 @@ end
 ]]
 function RoundService:GetRound(roundName: string): Types.BaseRound
 	-- Make sure the round actually exist's before returning data.
-	if not self._activeRounds[roundName] then
+	if not self._activeRound[roundName] then
 		warn(string.format("[RoundService] - No round exist's in the directory with the name %q", roundName))
 		return
 	end
 
-	return self._activeRounds[roundName]
+	return self._activeRound[roundName]
 end
 
 -- ==================
@@ -135,7 +148,7 @@ end
 	@return ()
 ]]
 function RoundService:_main(): ()
-	self:InitializeRound(
+	self:InitalizeRound(
 		RoundServiceConstraints.RoundNames.INTERMISSION_ROUND_NAME,
 		RoundServiceConstraints.INTERMISSION_DURATION
 	)
@@ -145,7 +158,7 @@ function RoundService:_main(): ()
 		local plrCount = #Players:GetPlayers()
 
 		if plrCount >= RoundServiceConstraints.MINIMUM_PLAYERS then
-			-- self:InitializeRound(
+			-- self:InitalizeRound(
 			-- 	RoundServiceConstraints.RoundNames.BASE_ROUND_NAME,
 			-- 	RoundServiceConstraints.INTERMISSION_DURATION
 			-- )
@@ -157,6 +170,21 @@ function RoundService:_main(): ()
 	self._maid:GiveTask(self.RoundCreated:Connect(function(roundClass: Types.BaseRound)
 		-- roundClass:StartRound()
 	end))
+end
+
+--[[
+	Cleans up the active round.
+
+	@return ()
+]]
+function RoundService:_cleanupRound(): ()
+	if not self._activeRound then
+		warn("[RoundService] - No active round cannot clean nothing.")
+		return
+	end
+
+	self._activeRound:Destroy()
+	self._activeRound = nil
 end
 
 --[[
