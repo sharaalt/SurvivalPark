@@ -2,10 +2,15 @@ local Types = {}
 
 export type DatastoreManager = {
 	new: (data: any) -> (),
-	SaveData: () -> (),
-	LoadData: () -> (),
-	UpdateData: () -> (),
+	Set: () -> (),
+	Get: () -> (),
 	Destroy: () -> (),
+}
+
+export type DataProfile = {
+	Data: { any },
+	UserId: number,
+	_dirty: boolean,
 }
 
 return Types

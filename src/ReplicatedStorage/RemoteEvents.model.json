@@ -4,6 +4,10 @@
         {
             "Name": "OnTimerUpdateRequest",
             "ClassName": "RemoteEvent"
+        },
+        {
+            "Name": "OnClientDataRequest",
+            "ClassName": "RemoteFunction"
         }
     ]
 }

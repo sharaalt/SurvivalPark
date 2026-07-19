@@ -1,7 +1,7 @@
 --[[
 	@author sharafzada
     @class DatastoreService.luau
-    @version 1.0.0
+    @version 1.0.1
 
 	-- To-do:
 	@todo Create DatastoreManager.luau
@@ -10,6 +10,10 @@
 ]]
 
 -- External Services
+local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
+local BasePlayerDataTemplate = require(script.Parent.Templates.BasePlayerData)
+local DeveloperDataTemplate = require(script.Parent.Templates.BaseDeveloperData)
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Types = require(script.Parent.Types)
 local DatastoreManager = require(script.Parent.Classes.DatastoreManager)
@@ -65,14 +69,31 @@ function DatastoreService:LoadPlayerData(player: Player): ()
 		return
 	end
 
-	local succ, data = pcall(function(...)
-		PlayerDatastore:GetAsync(player.UserId)
+	local succ, data = pcall(function()
+		-- If we're in studio we return template data.
+		if DatastoreServiceConstants.STUDIO_MODE and RunService:IsStudio() then
+			warn("[DatastoreService] - Studio mode enabled loading template data.")
+			return DeveloperDataTemplate.getTemplate()
+		end
+
+		return PlayerDatastore:GetAsync(player.UserId)
 	end)
 
 	if succ then
+		if data == nil then
+			warn("[DatastoreService] - No data found, creating a new profile.")
+			data = BasePlayerDataTemplate.getTemplate()
+			print(data)
+		end
+
 		-- Create's the manager and push's it to the cache.
 		local manager = DatastoreManager.new(player, data)
 		self._cache[player.UserId] = manager
+
+		-- Link up signals from the manager.
+		manager._maid:GiveTask(manager.Destroyed:Connect(function(data)
+			self:SaveProfile(data)
+		end))
 
 		-- Fire the DataLoaded event and return the data.
 		self.DataLoaded:Fire(manager)
@@ -91,7 +112,7 @@ end
 ]]
 function DatastoreService:UnloadData(player: Player): ()
 	-- Check if the user's data is loaded if not return.
-	if self._cache[player.UserId] then
+	if not self._cache[player.UserId] then
 		warn(string.format("[DatastoreService] - No actively loaded data for %q in the cache.", player.UserId))
 		return
 	end
@@ -111,15 +132,21 @@ end
 
 	@return ()
 ]]
-function DatastoreService:SaveProfile(profile: { any }): ()
+function DatastoreService:SaveProfile(profile: Types.DataProfile): ()
 	-- Save's the data to the datastore.
 	local succ, err = pcall(function()
-		PlayerDatastore:SetAsync(profile.UserId, profile:GetData())
+		-- Don't save the data if we're in studio mode.
+		if DatastoreServiceConstants.STUDIO_MODE and RunService:IsStudio() then
+			warn("[DatastoreService] - Studio mode enabled not saving to the datastore.")
+			return
+		end
+
+		return PlayerDatastore:SetAsync(profile.UserId, profile.Data)
 	end)
 
 	-- If successfully saved we fire the signal else we throw and error.
 	if succ then
-		profile.DataSaved:Fire()
+		profile._dirty = false
 	else
 		warn(`[DatastoreService] - An error occured whilst saving data: {err}`)
 	end
@@ -144,15 +171,35 @@ end
 
 	@return ()
 ]]
-function DatastoreManager:_main(): ()
+function DatastoreService:_main(): ()
 	-- Player Functions
 	Players.PlayerAdded:Connect(function(plr: Player)
 		self:LoadPlayerData(plr)
 	end)
 
-	Players.PlayerDisconnecting:Connect(function(plr: Player)
+	Players.PlayerRemoving:Connect(function(plr: Player)
 		self:UnloadData(plr)
 	end)
+
+	-- Remote Events
+	RemoteEvents.OnClientDataRequest.OnServerInvoke = function(player)
+		local profile = self:GetProfile(player)
+
+		return profile._data.Data
+	end
+
+	while true do
+		task.wait(DatastoreServiceConstants.AUTO_SAVE_DELAY)
+
+		for _, profile in pairs(self._cache) do
+			local profileData: Types.DataProfile = profile._data
+
+			if profileData._dirty then
+				profileData._dirty = false
+				self:SaveProfile(profile._data.Data)
+			end
+		end
+	end
 end
 
 --[[

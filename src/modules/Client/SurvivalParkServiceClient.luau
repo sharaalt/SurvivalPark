@@ -27,6 +27,7 @@ function SurvivalParkServiceClient.Init(self: SurvivalParkServiceClient, service
 	-- Internal
 	self._serviceBag:GetService(require("SurvivalParkTranslator"))
 	self._serviceBag:GetService(require("UIService"))
+	self._serviceBag:GetService(require("DatastoreClientBridge"))
 end
 
 return SurvivalParkServiceClient

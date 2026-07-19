@@ -10,7 +10,9 @@
 ]]
 
 -- External Services
+local DatastoreProfile = require(script.Parent.Parent.DatastoreProfile)
 local DatastoreServiceConstants = require(script.Parent.Parent.Parent.Parent.Shared.DatastoreServiceConstants)
+local Types = require(script.Parent.Parent.Types)
 
 local loader = require(script.Parent.Parent.Parent.loader) :: any
 local require = loader.load(script)
@@ -30,51 +32,87 @@ function DatastoreManager.new(player: Player, data: any)
 
 	-- Variables
 	self._player = player
-	self._data = data
+	self._data = DatastoreProfile.formatTable(data, player) :: Types.DataProfile
 
 	-- Services
 	self._maid = Maid.new()
 
 	-- Signals
-	self.DataSaved = Signal.new()
-	self.DataLoaded = Signal.new()
 	self.DataUpdated = Signal.new()
-	self.ManagerDeleted = Signal.new()
+	self.Destroyed = Signal.new()
 
 	return self
 end
 
+-- ==================
+-- === Public API ===
+-- ==================
 --[[
-    Saves data to the datastore.
+	Set's a certain parameter in the data with a new value.
 
-    @return ()
+	@param paramName { string } -- The name of the parameter you want to update.
+	@param value any -- The value you want to update to.
+
+	@return ()
 ]]
-function DatastoreManager:Save(): ()
-	self.DataSaved:Fire()
+function DatastoreManager:Set(path: { string }, value: any): ()
+	local data: Types.DataProfile = self._data.Data
+
+	-- Travese the self._data table to find the "needle in the haystack"
+	for i = 1, #path - 1 do
+		-- Update the path.
+		data = data[path[i]]
+
+		-- If data is nil we return a warning.
+		if data == nil then
+			warn(string.format("[DatastoreManager] - Invalid path %q", path[i]))
+			return
+		end
+	end
+
+	-- Update the value and print success.
+	data[path[#path]] = value
+	self._data._dirty = true
+	self.DataUpdated:Fire()
+	print("[DatastoreManager] - Sucessfully updated value.")
 end
+
 --[[
+	Get's a certain parameter and it's value in a table.
 
+	@param paramName { string } -- The name of the parameter you want to get.
+
+	@return ()
 ]]
-function DatastoreManager:Load(): () end
+function DatastoreManager:Get(path: { string }): any
+	-- Create a local copy.
+	local data: Types.DataProfile = self._data.Data
 
--- --[[
--- 	Set's a certain parameter in the data with a new value.
+	-- Loop to find the "needle in the haystack"
+	for i = 1, #path do
+		-- If it exists update the path.
+		data = data[path[i]]
 
--- 	@param paramName string -- The name of the parameter you want to update.
--- 	@param value any -- The value you want to update to.
+		-- If it's nil we return an error.
+		if data == nil then
+			warn(string.format("[DatastoreManager] - Invalid path %q", path[i]))
+			return nil
+		end
+	end
 
--- 	@return ()
--- ]]
--- function DatastoreManager:Set(paramName: string, value: any): ()
--- 	if typeof(paramName) ~= "string" then
--- 		warn(string.format("[DatastoreManager] - Type of paramName %q is not a valid type.", typeof(paramName)))
--- 		return
--- 	end
+	return data
+end
 
--- 	self._data[paramName] = value
--- end
+-- ==================
+-- == Private API ===
+-- ==================
+--[[
+	Destroy's the manager and save's data one more time.
 
+	@return ()
+]]
 function DatastoreManager:Destroy(): ()
+	self.Destroyed:Fire(self._data)
 	self._maid:DoCleaning()
 	print("[DatastoreManager] - Sucessfully destroyed and cleaned DatastoreManager.")
 end
