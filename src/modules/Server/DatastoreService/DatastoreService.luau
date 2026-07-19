@@ -10,6 +10,7 @@
 ]]
 
 -- External Services
+local Players = game:GetService("Players")
 local Types = require(script.Parent.Types)
 local DatastoreManager = require(script.Parent.Classes.DatastoreManager)
 local DataStoreService = game:GetService("DataStoreService")
@@ -33,7 +34,7 @@ function DatastoreService:Init(serviceBag)
 	self._serviceBag = assert(serviceBag, "[DatastoreService] - DatastoreService already initalized.")
 
 	-- Variables
-	self._cache = {}
+	self._cache = {} :: { [string]: Types.DatastoreManager }
 
 	-- Services
 	self._maid = Maid.new()
@@ -41,6 +42,10 @@ function DatastoreService:Init(serviceBag)
 	-- Signals
 	self.DataLoaded = Signal.new()
 	self.DataUnloaded = Signal.new()
+
+	self._maid:GiveTask(task.spawn(function()
+		self:_main()
+	end))
 end
 
 -- ==================
@@ -67,7 +72,6 @@ function DatastoreService:LoadPlayerData(player: Player): ()
 	if succ then
 		-- Create's the manager and push's it to the cache.
 		local manager = DatastoreManager.new(player, data)
-
 		self._cache[player.UserId] = manager
 
 		-- Fire the DataLoaded event and return the data.
@@ -85,8 +89,19 @@ end
 
 	@return ()
 ]]
-function DatastoreService:UnloadData(): ()
-	-- If there's no active cache for the player than we
+function DatastoreService:UnloadData(player: Player): ()
+	-- Check if the user's data is loaded if not return.
+	if self._cache[player.UserId] then
+		warn(string.format("[DatastoreService] - No actively loaded data for %q in the cache.", player.UserId))
+		return
+	end
+
+	-- Destroy the manager.
+	self._cache[player.UserId]:Destroy()
+
+	-- Print sucess and fire signal.
+	self.DataUnloaded:Fire(player)
+	print(string.format("[DatastoreService] - Sucessfully deleted data for %q", player.UserId))
 end
 
 --[[
@@ -124,6 +139,22 @@ end
 -- ==================
 -- === Private API ==
 -- ==================
+--[[
+	The main loop for the DatastoreService handles user's joining & leaving.
+
+	@return ()
+]]
+function DatastoreManager:_main(): ()
+	-- Player Functions
+	Players.PlayerAdded:Connect(function(plr: Player)
+		self:LoadPlayerData(plr)
+	end)
+
+	Players.PlayerDisconnecting:Connect(function(plr: Player)
+		self:UnloadData(plr)
+	end)
+end
+
 --[[
 	Cleans up the service.
 
