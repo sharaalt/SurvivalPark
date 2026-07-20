@@ -188,6 +188,13 @@ function DatastoreService:_main(): ()
 		return profile._data.Data
 	end
 
+	RemoteEvents.OnClientDataSetRequest.OnServerEvent:Connect(function(plr, paramPath, value)
+		local profile: Types.DatastoreManager = self:GetProfile(plr)
+
+		profile:Set(paramPath, value)
+	end)
+
+	-- Autosave System
 	while true do
 		task.wait(DatastoreServiceConstants.AUTO_SAVE_DELAY)
 

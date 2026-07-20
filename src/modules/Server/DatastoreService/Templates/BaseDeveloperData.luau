@@ -3,11 +3,11 @@ local BasePlayerData = {
 		MatchData = {
 			TeamData = {
 				TeamRed = {
-					Wins = 0,
+					Wins = 2,
 					Losses = 0,
 				},
 				TeamBlue = {
-					Wins = 0,
+					Wins = 30,
 					Losses = 0,
 				},
 			},

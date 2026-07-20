@@ -11,7 +11,14 @@ local SideBarScreen = Roact.Component:extend("SideBarScreen")
 
 function SideBarScreen:init(props)
 	self._maid = Maid.new()
-	self._serviceBag = props.serviceBag
+	self._serviceBag = props._serviceBag
+
+	-- Services
+	self._datastoreClient = self._serviceBag:GetService(require("DatastoreClientBridge"))
+
+	self._maid:GiveTask(self._datastoreClient.DataLoaded:Connect(function(data)
+		self:setState({ data = data, coinsAmount = data.GameData.BasicData.Coins })
+	end))
 
 	self:setState({
 		states = {
@@ -19,6 +26,8 @@ function SideBarScreen:init(props)
 			statEnabled = false,
 			invEnabled = false,
 		},
+		coinsAmount = "0",
+		data = nil,
 	})
 end
 
@@ -66,7 +75,7 @@ function SideBarScreen:render()
 					BackgroundTransparency = 1,
 					Position = UDim2.fromScale(0.302, 0.101),
 					Size = UDim2.fromScale(0.634, 0.76),
-					Text = "NullVoid",
+					Text = self.state.coinsAmount,
 					FontFace = Font.fromEnum(Enum.Font.FredokaOne),
 					TextColor3 = Color3.fromRGB(255, 255, 255),
 				}, {

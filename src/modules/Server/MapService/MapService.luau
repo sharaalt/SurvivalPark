@@ -38,6 +38,10 @@ function MapService:Init(serviceBag)
 	-- Signals
 	self.MapCreated = Signal.new()
 	self.MapDestroyed = Signal.new()
+
+	self._maid:GiveTask(task.spawn(function()
+		self:LoadMap("Lobby", "Lobby")
+	end))
 end
 
 -- ===================

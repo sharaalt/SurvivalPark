@@ -6,6 +6,10 @@
             "ClassName": "RemoteEvent"
         },
         {
+            "Name": "OnClientDataSetRequest",
+            "ClassName": "RemoteEvent"
+        },
+        {
             "Name": "OnClientDataRequest",
             "ClassName": "RemoteFunction"
         }

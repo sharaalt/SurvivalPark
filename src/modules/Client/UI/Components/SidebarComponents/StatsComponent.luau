@@ -10,9 +10,22 @@ function StatsComponent:init(props)
 	self._maid = Maid.new()
 	self._serviceBag = props._serviceBag
 
+	self._datastoreClient = self._serviceBag:GetService(require("DatastoreClientBridge"))
+
+	self._maid:GiveTask(self._datastoreClient.DataLoaded:Connect(function(data)
+		print(data)
+		self:setState({
+			data = data,
+			hunterWins = data.MatchData.TeamData.TeamRed.Wins,
+			hiderWins = data.MatchData.TeamData.TeamBlue.Wins,
+		})
+	end))
+
 	self:setState({
 		_serviceBag = props._serviceBag,
 		enabled = props.enabled,
+		hunterWins = "0",
+		hiderWins = "0",
 	})
 end
 
@@ -60,7 +73,7 @@ function StatsComponent:render()
 					Position = UDim2.fromScale(0.817, 0.298),
 					TextScaled = true,
 					FontFace = Font.fromEnum(Enum.Font.FredokaOne),
-					Text = "0",
+					Text = self.state.hunterWins,
 					BackgroundTransparency = 1,
 					TextColor3 = Color3.fromRGB(189, 189, 189),
 				}, {
@@ -81,7 +94,7 @@ function StatsComponent:render()
 					TextScaled = true,
 					FontFace = Font.fromEnum(Enum.Font.FredokaOne),
 					BackgroundTransparency = 1,
-					Text = "0",
+					Text = self.state.hiderWins,
 					TextColor3 = Color3.fromRGB(189, 189, 189),
 				}, {
 					UIStroke = Roact.createElement("UIStroke", {

@@ -10,6 +10,7 @@
 ]]
 
 -- External Services
+local Players = game:GetService("Players")
 local RemoteEvents = game.ReplicatedStorage.Shared.RemoteEvents
 
 local loader = require(script.Parent.Parent.loader) :: any
@@ -27,15 +28,18 @@ function DatastoreClientBridge:Init(serviceBag)
 
 	self._serviceBag = assert(serviceBag, "[DatastoreClientBridge] - DatastoreClientBridge already initalized.")
 
+	-- Variables
+	self._data = nil
+
 	-- Services
 	self._maid = Maid.new()
 
 	self._maid:GiveTask(task.spawn(function()
-		self:Get(game.Players.LocalPlayer)
+		self:Get()
 	end))
 
 	-- Signals
-	self.DataRetrived = Signal.new()
+	self.DataLoaded = Signal.new()
 end
 
 -- ==================
@@ -44,24 +48,46 @@ end
 --[[
     Retrive's data directly and returns it.
 
-    @param player Player -- The player who's data you want to find.
-
     @return { any }
 ]]
-function DatastoreClientBridge:Get(player: Player): { any }
-	-- Make sure types are in check.
-	if typeof(player) ~= "Instance" then
-		warn(string.format("[DatastoreClientBridge] - Type of player %q is not a valid type.", typeof(player)))
-		return
+function DatastoreClientBridge:Get(): { any }
+	-- If we already have the data than there's no need to retrieve again just return it.
+	if self._data then
+		warn("[DatastoreClientBridge] - Already retrieved data.")
+		return self._data
 	end
 
 	-- Get data and print succ.
 	local data = RemoteEvents.OnClientDataRequest:InvokeServer()
+
+	-- Update the data variable.
+	self._data = data
 	print("[DatastoreClientBridge] - Sucessfully retrieved data.")
+	self.DataLoaded:Fire(data)
 
 	return data
 end
 
+--[[
+	Update's a datastore parameter with a specified value.
+
+	@param paramPath { string } -- The path to the param you want to update.
+	@param value any -- The value you want to update the param to.
+
+	@return ()
+]]
+function DatastoreClientBridge:Set(paramPath: { string }, value: any): ()
+	RemoteEvents.OnClientDataSetRequest:FireServer(paramPath, value)
+end
+
+-- ==================
+-- == Private API ===
+-- ==================
+--[[
+    Destroy's and clean's up the client bridge.
+
+    @return ()
+]]
 function DatastoreClientBridge:Destroy()
 	self._maid:DoCleaning()
 	print("[DatastoreClientBridge] - Sucessfully destroyed and cleaned DatastoreClientBridge.")
